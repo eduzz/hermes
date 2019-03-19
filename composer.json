@@ -2,20 +2,6 @@
     "name": "eduzz/hermes",
     "description": "Essa Lib e responsavel por encapsular a conexao com gerenciadores de filas. Focando no uso com RabbitMQ.",
     "keywords": ["library", "rabbitmq", "queue", "Eduzz"],
-    "authors": [
-        {
-            "name": "Bruno Augusto Guido",
-            "email": "bruno.guido@eduzz.com"
-        },
-        {
-            "name": "Luiz Fernando de Oliveira da Silva",
-            "email": "luiz.silva@eduzz.com"
-        },
-        {
-            "name": "Angelo Rodrigo Ribeiro da Silva",
-            "email": "angelo.silva@eduzz.com"
-        }
-    ],
     "license": "MIT",
     "type": "library",
      "require": {
@@ -38,5 +24,11 @@
         "psr-4": {
             "Eduzz\\Hermes\\Tests\\": "tests/"
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/eduzz/hermes.git"
+        }
+    ]
 }
