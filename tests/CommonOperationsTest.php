@@ -86,10 +86,30 @@ class CommonOperationsTest extends BaseTest
                 ]
             )
             ->andReturnNull()
+            ->shouldReceive('queue_bind')
+            ->withArgs(
+                [
+                'queue_name.nack',
+                'eduzz',
+                'queue_name.nack'
+                ]
+            )
+            ->andReturnNull()
             ->shouldReceive('exchange_declare')
             ->withArgs(
                 [
                 $args['exchange'],
+                'topic',
+                false,
+                true,
+                false
+                ]
+            )
+            ->andReturnNull()
+            ->shouldReceive('exchange_declare')
+            ->withArgs(
+                [
+                'eduzz',
                 'topic',
                 false,
                 true,

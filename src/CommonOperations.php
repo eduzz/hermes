@@ -58,9 +58,11 @@ class CommonOperations
                 $durable
             );
 
+            $this->bind($this->getNackQueueNameFor($name), $this->getNackQueueNameFor($name));
+
             $arguments = new AMQPTable(
                 array(
-                    "x-dead-letter-exchange" => '',
+                    "x-dead-letter-exchange" => 'eduzz',
                     "x-dead-letter-routing-key" => $this->getNackQueueNameFor($name)
                 )
             );
