@@ -6,6 +6,6 @@ class RoutingKeyParser
 {
     public static function isValid($routingKey)
     {
-        return preg_match('@^[a-z_\-]+\.[a-z_\-]+\.[a-z_\-]+$@', $routingKey);
+        return preg_match('@^[a-z0-9_\-]+\.[a-z0-9_\-]+\.[a-z0-9_\-]+$@', $routingKey);
     }
 }
