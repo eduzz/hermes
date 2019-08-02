@@ -20,10 +20,6 @@ abstract class AbstractMessage
      */
     public function setTopic($topic)
     {
-        if (!RoutingKeyParser::isValid($topic)) {
-            throw new \Exception("Topic must be in format: 'app.module.event', '{$topic}' given");
-        }
-
         $this->topic = $topic;
     }
 
