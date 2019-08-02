@@ -31,14 +31,4 @@ class ExampleMessageTest extends BaseTest
             $message->getMessage()
         );
     }
-
-    public function testMessageShouldTryToInstantiateMessageWithInvalidTopic()
-    {
-        $this->expectException(\Exception::class);
-
-        $message = new Created(
-            ['id' => 1, 'message' => 'content'],
-            'INVALIDTOPIC'
-        );
-    }
 }
