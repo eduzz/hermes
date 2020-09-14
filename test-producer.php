@@ -9,12 +9,18 @@ $hermes = new Hermes();
 $message = new Eduzz\Hermes\Examples\Message\Sun\User\Created(5, "Angelo Silva");
 
 $hermes->setConfig([
-    'host' => 'localhost',
+    'host' => 'rabbitmq',
     'port' => 5672,
     'username' => 'guest',
-    'password' => 'guest'
+    'password' => 'guest',
+    'vhost' => 'test',
+    'connection_name' => 'producer',
 ]);
 
-$hermes->publish(
-    $message
-);
+while (true) {
+    $hermes->publish(
+        $message
+    );
+
+    sleep(5);
+}

@@ -471,3 +471,4 @@ __pycache__/
 
 
 # End of https://www.gitignore.io/api/eclipse,laravel,composer,netbeans,phpstorm,visualstudio,visualstudiocode
+coverage/

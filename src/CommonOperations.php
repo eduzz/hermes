@@ -2,10 +2,9 @@
 
 namespace Eduzz\Hermes;
 
+use Eduzz\Hermes\Exception\HermesInvalidArgumentException;
 use PhpAmqpLib\Connection\AMQPConnection;
 use PhpAmqpLib\Wire\AMQPTable;
-
-use Eduzz\Hermes\Exception\HermesInvalidArgumentException;
 
 class CommonOperations
 {
@@ -24,7 +23,8 @@ class CommonOperations
         'port' => 5672,
         'username' => 'guest',
         'password' => 'guest',
-        'vhost' => '/'
+        'vhost' => '/',
+        'connection_name' => null,
     ]
     ) {
         $this->setConfig($config);
@@ -40,6 +40,10 @@ class CommonOperations
             $config['vhost'] = '/';
         }
 
+        if (!(array_key_exists('connection_name', $config)) || empty($config['connection_name'])) {
+            $config['connection_name'] = 'hermes-'.gethostname();
+        }
+
         $this->config = $config;
 
         return $this;
@@ -51,7 +55,7 @@ class CommonOperations
 
         $arguments = array();
 
-        if($createErrorQueue) {
+        if ($createErrorQueue) {
             $this->declareQueue(
                 $this->getNackQueueNameFor($name),
                 $arguments,
@@ -63,7 +67,7 @@ class CommonOperations
             $arguments = new AMQPTable(
                 array(
                     "x-dead-letter-exchange" => 'eduzz',
-                    "x-dead-letter-routing-key" => $this->getNackQueueNameFor($name)
+                    "x-dead-letter-routing-key" => $this->getNackQueueNameFor($name),
                 )
             );
         }
@@ -73,14 +77,14 @@ class CommonOperations
         return $this;
     }
 
-    public function getLastQueueCreated() 
+    public function getLastQueueCreated()
     {
         return $this->lastQueueCreated;
     }
 
     protected function declareExchange($exchange)
     {
-        if(!$this->exchangeAlredyDeclared) {
+        if (!$this->exchangeAlredyDeclared) {
             $this->channel->exchange_declare(
                 $exchange,
                 'topic',
@@ -90,14 +94,14 @@ class CommonOperations
             );
 
             $this->exchangeAlredyDeclared = true;
-        }       
+        }
 
         return $this;
     }
 
     protected function declareQueue($name, $arguments, $durable)
     {
-        list($name, ,) = $this->channel->queue_declare(
+        list($name, ) = $this->channel->queue_declare(
             $name,
             false,
             $durable,
@@ -120,7 +124,7 @@ class CommonOperations
         $this->connect();
         $this->declareExchange($exchange);
 
-        if(empty($name)) {
+        if (empty($name)) {
             $name = $this->lastQueueCreated;
         }
 
@@ -159,6 +163,8 @@ class CommonOperations
     //@codeCoverageIgnoreStart
     private function getDefaultAmqpConnection()
     {
+        AMQPConnection::$LIBRARY_PROPERTIES['connection_name'] = array('S', $this->config['connection_name']);
+
         $amqpConnection = new AMQPConnection(
             $this->config['host'],
             $this->config['port'],
