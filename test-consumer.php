@@ -7,20 +7,22 @@ use Eduzz\Hermes\Hermes;
 $hermes = new Hermes();
 
 $hermes->setConfig([
-    'host' => '127.0.0.1',
+    'host' => 'rabbitmq',
     'port' => 5672,
     'username' => 'guest',
-    'password' => 'guest'
+    'password' => 'guest',
+    'vhost' => 'test',
+    'connection_name' => 'consumer',
 ]);
 
 $queueName = $hermes->addQueue('teste', true)
     ->bind('app.module.event')
     ->getLastQueueCreated();
 
-$hermes->addListenerTo($queueName, function($msg, $consumer) use ($hermes) {
+$hermes->addListenerTo($queueName, function ($msg, $consumer) use ($hermes) {
     try {
         throw new Exception(json_encode($msg->body));
-    } catch(Exception $e) {
+    } catch (Exception $e) {
         return $msg->delivery_info['channel']
             ->basic_nack(
                 $msg->delivery_info['delivery_tag']

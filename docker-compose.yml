@@ -1,0 +1,27 @@
+version: "3"
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_VHOST: test
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+  producer:
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+    command: "php test-producer.php"
+    links:
+      - rabbitmq
+    volumes:
+      - ./:/usr/share/nginx/html
+  consumer:
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+    command: "php test-consumer.php"
+    links:
+      - rabbitmq
+    volumes:
+      - ./:/usr/share/nginx/html
