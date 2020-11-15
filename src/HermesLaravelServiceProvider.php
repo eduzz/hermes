@@ -2,9 +2,8 @@
 
 namespace Eduzz\Hermes;
 
-use Illuminate\Support\ServiceProvider;
-
 use Eduzz\Hermes\Hermes;
+use Illuminate\Support\ServiceProvider;
 
 class HermesLaravelServiceProvider extends ServiceProvider
 {
@@ -14,7 +13,7 @@ class HermesLaravelServiceProvider extends ServiceProvider
     {
         $this->publishes(
             [
-            __DIR__ . '/Config/hermes.php' => $this->getConfigPath('hermes.php'),
+                __DIR__ . '/Config/hermes.php' => $this->getConfigPath('hermes.php'),
             ], 'config'
         );
     }
@@ -25,7 +24,14 @@ class HermesLaravelServiceProvider extends ServiceProvider
             'Eduzz\Hermes\Hermes', function ($app) {
                 $hermes = new Hermes();
 
-                $hermes->setConfig(config('hermes.connection'));
+                $config = config('hermes.connection');
+                $name = config('app.name');
+
+                if (!(array_key_exists('connection_name', $config)) || empty($config['connection_name'])) {
+                    $config['connection_name'] = !empty($name) ? $name : null;
+                }
+
+                $hermes->setConfig($config);
 
                 return $hermes;
             }
@@ -38,7 +44,8 @@ class HermesLaravelServiceProvider extends ServiceProvider
      * @param string $path
      * @return string
      */
-    private function getConfigPath($path = '') {
+    private function getConfigPath($path = '')
+    {
         return $this->app->basePath() . '/config' . ($path ? '/' . $path : $path);
     }
 

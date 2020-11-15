@@ -79,15 +79,16 @@ Então, é necessário configurar o hermes, no arquivo config/hermes.php, na var
 ```php
 <?php
 
-return array(
-    'connection' =>  array(
-        'host'          => env('HERMES_HOST', '127.0.0.1'),
-        'port'          => env('HERMES_PORT', 5672),
-        'username'      => env('HERMES_USERNAME', 'guest'),
-        'password'      => env('HERMES_PASSWORD', 'guest'),
-        'vhost'         => env('HERMES_VHOST', '/')
-    )
-);
+return [
+    'connection' =>  [
+        'host' => env('HERMES_HOST', '127.0.0.1'),
+        'port' => env('HERMES_PORT', 5672),
+        'username' => env('HERMES_USERNAME', 'guest'),
+        'password' => env('HERMES_PASSWORD', 'guest'),
+        'vhost' => env('HERMES_VHOST', '/'),
+        'connection_name' => env('HERMES_CONNECTION_NAME', '/'),
+    ]
+];
 ```
 
 ### Instalação em projeto Lumen
@@ -97,15 +98,16 @@ Para instalação em projeto lumen, é preciso criar o arquivo de configuração
 ```php
 <?php
 
-return array(
-    'connection' =>  array(
-        'host'          => env('HERMES_HOST', '127.0.0.1'),
-        'port'          => env('HERMES_PORT', 5672),
-        'username'      => env('HERMES_USERNAME', 'guest'),
-        'password'      => env('HERMES_PASSWORD', 'guest'),
-        'vhost'         => env('HERMES_VHOST', '/')
-    )
-);
+return [
+    'connection' =>  [
+        'host' => env('HERMES_HOST', '127.0.0.1'),
+        'port' => env('HERMES_PORT', 5672),
+        'username' => env('HERMES_USERNAME', 'guest'),
+        'password' => env('HERMES_PASSWORD', 'guest'),
+        'vhost' => env('HERMES_VHOST', '/'),
+        'connection_name' => env('HERMES_CONNECTION_NAME', '/'),
+    ]
+];
 ```
 
 Vamos também adicionar nosso service provider no register, então na pasta bootstrap/app.php, procure pela linha que faz os registros e adicione:
@@ -224,7 +226,16 @@ O segundo paramêtro do método publish (exchange) é opcional, ele é a exchang
 ### Enviando mensagens com Hermes sem Framework
 
 A lógica é a mesma, porém, passando as configurações no construtor ou através do setConfig, exemplo:
-
+return array(
+    'connection' =>  array(
+        'host' => env('HERMES_HOST', '127.0.0.1'),
+        'port' => env('HERMES_PORT', 5672),
+        'username' => env('HERMES_USERNAME', 'guest'),
+        'password' => env('HERMES_PASSWORD', 'guest'),
+        'vhost' => env('HERMES_VHOST', '/').
+        'connection_name' => env('HERMES_CONNECTION_NAME', '/'),
+    )
+);
 ```php
 <?php
 
