@@ -3,6 +3,7 @@
 namespace Eduzz\Hermes;
 
 use Eduzz\Hermes\Exception\HermesInvalidArgumentException;
+use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPConnection;
 use PhpAmqpLib\Wire\AMQPTable;
 
@@ -160,10 +161,18 @@ class CommonOperations
         return $this;
     }
 
+    public function setChannel(AMQPChannel $channel)
+    {
+        $this->channel = $channel;
+
+        return $this;
+    }
+
     //@codeCoverageIgnoreStart
     private function getDefaultAmqpConnection()
     {
         AMQPConnection::$LIBRARY_PROPERTIES['connection_name'] = array('S', $this->config['connection_name']);
+        AMQPConnection::$LIBRARY_PROPERTIES['product'] = array('S', 'hermes');
 
         $amqpConnection = new AMQPConnection(
             $this->config['host'],

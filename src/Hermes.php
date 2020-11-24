@@ -6,10 +6,10 @@
 
 namespace Eduzz\Hermes;
 
-use Eduzz\Hermes\Publisher\Publisher;
-use Eduzz\Hermes\Message\AbstractMessage;
 use Eduzz\Hermes\Consumer\Consumer;
-use Eduzz\Hermes\Exception\HermesInvalidArgumentException;
+use Eduzz\Hermes\Message\AbstractMessage;
+use Eduzz\Hermes\Publisher\Publisher;
+use PhpAmqpLib\Connection\AMQPConnection;
 
 class Hermes extends CommonOperations
 {
@@ -34,11 +34,13 @@ class Hermes extends CommonOperations
         return $this;
     }
 
-    public function consumer() {
+    public function consumer()
+    {
         return $this->consumer;
     }
 
-    public function setQos($qos) {
+    public function setQos($qos)
+    {
         $this->qos = $qos;
     }
 
@@ -66,6 +68,12 @@ class Hermes extends CommonOperations
     //@codeCoverageIgnoreStart
     private function getDefaultConsumer()
     {
+        if ($this->amqpConnection instanceof AMQPConnection) {
+            return (new Consumer($this->config))
+                ->setAMQPConnection($this->amqpConnection)
+                ->setChannel($this->channel);
+        }
+
         return new Consumer($this->config);
     }
     //@codeCoverageIgnoreEnd
@@ -87,6 +95,12 @@ class Hermes extends CommonOperations
     //@codeCoverageIgnoreStart
     public function getDefaultPublisher()
     {
+        if ($this->amqpConnection instanceof AMQPConnection) {
+            return (new Publisher($this->config))
+                ->setAMQPConnection($this->amqpConnection)
+                ->setChannel($this->channel);
+        }
+
         return new Publisher($this->config);
     }
     //@codeCoverageIgnoreEnd

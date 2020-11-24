@@ -6,7 +6,7 @@ use Eduzz\Hermes\Hermes;
 
 $hermes = new Hermes();
 
-$message = new Eduzz\Hermes\Examples\Message\Sun\User\Created(5, "Angelo Silva");
+$message = new Eduzz\Hermes\Examples\Message\Sun\User\Created(5, 'app.module.event');
 
 $hermes->setConfig([
     'host' => 'rabbitmq',
@@ -22,5 +22,5 @@ while (true) {
         $message
     );
 
-    sleep(5);
+    sleep(1);
 }
