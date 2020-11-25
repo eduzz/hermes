@@ -1,15 +1,14 @@
 <?php
 /**
  * @package Hermes
- * @link    https://bitbucket.org/eduzz/hermes
+ * @link    https://github.com/eduzz/hermes/
  */
 
 namespace Eduzz\Hermes;
 
-use Eduzz\Hermes\Publisher\Publisher;
-use Eduzz\Hermes\Message\AbstractMessage;
 use Eduzz\Hermes\Consumer\Consumer;
-use Eduzz\Hermes\Exception\HermesInvalidArgumentException;
+use Eduzz\Hermes\Message\AbstractMessage;
+use Eduzz\Hermes\Publisher\Publisher;
 
 class Hermes extends CommonOperations
 {
@@ -23,42 +22,32 @@ class Hermes extends CommonOperations
         AbstractMessage $message,
         $exchange = 'eduzz'
     ) {
-        if (!($this->publisher instanceof Publisher)) {
-            //@codeCoverageIgnoreStart
-            $this->setPublisher($this->getDefaultPublisher());
-            //@codeCoverageIgnoreEnd
-        }
-
-        $this->publisher->send($message, $exchange);
+        $this->getDefaultPublisher()->send($message, $exchange);
 
         return $this;
     }
 
-    public function consumer() {
-        return $this->consumer;
+    public function consumer()
+    {
+        return $this->getDefaultConsumer();
     }
 
-    public function setQos($qos) {
+    public function setQos($qos)
+    {
         $this->qos = $qos;
     }
 
     public function addListenerTo($queue, $callback, $errorHandling = true)
     {
-        if (!($this->consumer instanceof Consumer)) {
-            //@codeCoverageIgnoreStart
-            $this->setConsumer($this->getDefaultConsumer());
-            //@codeCoverageIgnoreEnd
-        }
-
-        $this->consumer->setQos($this->qos);
-        $this->consumer->addListenerTo($queue, $callback, $errorHandling);
+        $this->getDefaultConsumer()->setQos($this->qos);
+        $this->getDefaultConsumer()->addListenerTo($queue, $callback, $errorHandling);
 
         return $this;
     }
 
     public function start()
     {
-        $this->consumer->start();
+        $this->getDefaultConsumer()->start();
 
         return $this;
     }
@@ -66,7 +55,17 @@ class Hermes extends CommonOperations
     //@codeCoverageIgnoreStart
     private function getDefaultConsumer()
     {
-        return new Consumer($this->config);
+        if ($this->consumer instanceof Consumer) {
+            return $this->consumer;
+        }
+
+        $this->connect();
+
+        $this->consumer = (new Consumer($this->config))
+            ->setAMQPConnection($this->amqpConnection)
+            ->setChannel($this->channel);
+
+        return $this->consumer;
     }
     //@codeCoverageIgnoreEnd
 
@@ -87,7 +86,16 @@ class Hermes extends CommonOperations
     //@codeCoverageIgnoreStart
     public function getDefaultPublisher()
     {
-        return new Publisher($this->config);
+        if ($this->publisher instanceof Publisher) {
+            return $this->publisher;
+        }
+
+        $this->connect();
+
+        $this->publisher = (new Publisher($this->config))
+            ->setAMQPConnection($this->amqpConnection)
+            ->setChannel($this->channel);
+        return $this->publisher;
     }
     //@codeCoverageIgnoreEnd
 }

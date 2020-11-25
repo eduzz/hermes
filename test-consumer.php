@@ -21,7 +21,7 @@ $queueName = $hermes->addQueue('teste', true)
 
 $hermes->addListenerTo($queueName, function ($msg, $consumer) use ($hermes) {
     try {
-        throw new Exception(json_encode($msg->body));
+        echo $msg->body;
     } catch (Exception $e) {
         return $msg->delivery_info['channel']
             ->basic_nack(

@@ -18,7 +18,7 @@ Primeiro, vamos adicionar a dependência e o repositório do hermes no nosso arq
     "repositories": [
         {
             "type": "vcs",
-            "url":  "git@bitbucket.org:eduzz/hermes.git"
+            "url":  "git@github.com:eduzz/hermes.git"
         }
     ]
 }
@@ -38,7 +38,7 @@ composer install
 
 Para instalar as dependência e o hermes
 
-PS: É preciso verificar se você está com a chave conectada ao bitbucket no shell onde vai instalar o hermes.
+PS: É preciso verificar se você está com a chave conectada ao github no shell onde vai instalar o hermes.
 
 ## Instalação em projeto Laravel
 
