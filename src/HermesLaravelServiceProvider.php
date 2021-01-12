@@ -20,7 +20,7 @@ class HermesLaravelServiceProvider extends ServiceProvider
 
     public function register()
     {
-        $this->app->bind(
+        $this->app->singleton(
             'Eduzz\Hermes\Hermes', function ($app) {
                 $hermes = new Hermes();
 
