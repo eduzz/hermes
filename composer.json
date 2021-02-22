@@ -8,7 +8,7 @@
         "php": ">=7.0",
         "ext-bcmath": "*",
         "ext-mbstring": "*",
-        "php-amqplib/php-amqplib": "2.12"
+        "php-amqplib/php-amqplib": "^2.12"
     },
     "require-dev": {
         "phpunit/phpunit": "^7.0",
