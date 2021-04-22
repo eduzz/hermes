@@ -76,13 +76,12 @@ class CommonOperations
 
             $arguments = new AMQPTable($deadLetterConfig);
         }
-
+        
+        $this->lastQueueCreated = $this->declareQueue($name, $arguments, $durable);
+        
         if ($createErrorQueue && !empty($retryQueueBind)) {
             $this->bind($name, $retryQueueBind);
         }
-
-        $this->lastQueueCreated = $this->declareQueue($name, $arguments, $durable);
-
         return $this;
     }
 
