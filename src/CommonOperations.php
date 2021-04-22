@@ -50,7 +50,7 @@ class CommonOperations
         return $this;
     }
 
-    public function addQueue($name = "", $createErrorQueue = true, $durable = true)
+    public function addQueue($name = "", $createErrorQueue = true, $durable = true, $retryTtl = null)
     {
         $this->connect();
 
@@ -65,12 +65,16 @@ class CommonOperations
 
             $this->bind($this->getNackQueueNameFor($name), $this->getNackQueueNameFor($name));
 
-            $arguments = new AMQPTable(
-                array(
-                    "x-dead-letter-exchange" => 'eduzz',
-                    "x-dead-letter-routing-key" => $this->getNackQueueNameFor($name),
-                )
-            );
+            $deadLetterConfig = [
+                "x-dead-letter-exchange" => 'eduzz',
+                "x-dead-letter-routing-key" => $this->getNackQueueNameFor($name),
+            ];
+
+            if (!empty($retryTtl)) {
+                $deadLetterConfig['x-message-ttl'] = intval($retryTtl);
+            }
+
+            $arguments = new AMQPTable($deadLetterConfig);
         }
 
         $this->lastQueueCreated = $this->declareQueue($name, $arguments, $durable);
