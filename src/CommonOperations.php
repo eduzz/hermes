@@ -50,7 +50,7 @@ class CommonOperations
         return $this;
     }
 
-    public function addQueue($name = "", $createErrorQueue = true, $durable = true, $retryTtl = null)
+    public function addQueue($name = "", $createErrorQueue = true, $durable = true, $retryTtl = null, $retryQueueBind = null)
     {
         $this->connect();
 
@@ -64,10 +64,13 @@ class CommonOperations
             );
 
             $this->bind($this->getNackQueueNameFor($name), $this->getNackQueueNameFor($name));
+            if (!empty($retryQueueBind)) {
+                $this->bind($name, $retryQueueBind);
+            }
 
             $deadLetterConfig = [
                 "x-dead-letter-exchange" => 'eduzz',
-                "x-dead-letter-routing-key" => $this->getNackQueueNameFor($name),
+                "x-dead-letter-routing-key" => $this->getRetryQueueBind($name, $retryQueueBind),
             ];
 
             if (!empty($retryTtl)) {
@@ -80,6 +83,14 @@ class CommonOperations
         $this->lastQueueCreated = $this->declareQueue($name, $arguments, $durable);
 
         return $this;
+    }
+
+    public function getRetryQueueBind($name, $retryQueueBind)
+    {
+        if (empty($retryQueueBind)) {
+            return $this->getNackQueueNameFor($name);
+        }
+        return $retryQueueBind;
     }
 
     public function getLastQueueCreated()
