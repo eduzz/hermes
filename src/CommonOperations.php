@@ -63,11 +63,14 @@ class CommonOperations
                 $durable
             );
 
-            $this->bind($this->getNackQueueNameFor($name), $this->getRetryQueueBind($name, $retryQueueBind));
+            $this->bind($this->getNackQueueNameFor($name), $this->getNackQueueNameFor($name));
+            if (!empty($retryQueueBind)) {
+                $this->bind($name, $retryQueueBind);
+            }
 
             $deadLetterConfig = [
                 "x-dead-letter-exchange" => 'eduzz',
-                "x-dead-letter-routing-key" => $this->getNackQueueNameFor($name),
+                "x-dead-letter-routing-key" => $this->getRetryQueueBind($name, $retryQueueBind),
             ];
 
             if (!empty($retryTtl)) {
