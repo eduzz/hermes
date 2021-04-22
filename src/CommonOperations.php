@@ -64,9 +64,6 @@ class CommonOperations
             );
 
             $this->bind($this->getNackQueueNameFor($name), $this->getNackQueueNameFor($name));
-            if (!empty($retryQueueBind)) {
-                $this->bind($name, $retryQueueBind);
-            }
 
             $deadLetterConfig = [
                 "x-dead-letter-exchange" => 'eduzz',
@@ -78,6 +75,10 @@ class CommonOperations
             }
 
             $arguments = new AMQPTable($deadLetterConfig);
+        }
+
+        if ($createErrorQueue && !empty($retryQueueBind)) {
+            $this->bind($name, $retryQueueBind);
         }
 
         $this->lastQueueCreated = $this->declareQueue($name, $arguments, $durable);
