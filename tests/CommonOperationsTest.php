@@ -156,6 +156,130 @@ class CommonOperationsTest extends BaseTest
         $this->assertEquals($args['queueName'], $commonOperations->getLastQueueCreated());
     }
 
+    public function testCommonOperationsShouldAddQueueAndBindItWithRetry()
+    {
+        $args = [
+            "queueName" => "queue_name",
+            "nackQueueName" => "queue_name.nack",
+            "exchange" => "exchange",
+            "routingKey" => 'app.module.action',
+            "retryQueueName" => "queue_name.retry",
+        ];
+
+        $amqpChannelMock = M::mock(AMQPChannel::class)
+            ->shouldReceive('queue_declare')
+            ->withArgs(
+                [
+                $args['queueName'],
+                false,
+                true,
+                false,
+                false,
+                false,
+                M::type(AMQPTable::class)
+                ]
+            )
+            ->andReturn(
+                [
+                $args['queueName'],
+                0,
+                0
+                ]
+            )
+            ->shouldReceive('queue_bind')
+            ->withArgs(
+                [
+                $args['queueName'],
+                $args['exchange'],
+                $args['routingKey']
+                ]
+            )
+            ->andReturnNull()
+            ->shouldReceive('queue_bind')
+            ->withArgs(
+                [
+                'queue_name.nack',
+                'eduzz',
+                'queue_name.nack'
+                ]
+            )
+            ->andReturnNull()
+            ->shouldReceive('exchange_declare')
+            ->withArgs(
+                [
+                $args['exchange'],
+                'topic',
+                false,
+                true,
+                false
+                ]
+            )
+            ->andReturnNull()
+            ->shouldReceive('exchange_declare')
+            ->withArgs(
+                [
+                'eduzz',
+                'topic',
+                false,
+                true,
+                false
+                ]
+            )
+            ->andReturnNull()
+            ->shouldReceive('queue_declare')
+            ->withArgs(
+                [
+                $args['nackQueueName'],
+                false,
+                true,
+                false,
+                false,
+                false,
+                M::type(AMQPTable::class)
+                ]
+            )
+            ->shouldReceive('queue_bind')
+            ->withArgs(
+                [
+                'queue_name',
+                'eduzz',
+                'queue_name.retry'
+                ]
+            )
+            ->andReturnNull()
+            ->andReturn(
+                [
+                $args['nackQueueName'],
+                0,
+                0
+                ]
+            )
+            ->getMock();
+
+        $amqpConnectionMock = M::mock(AMQPConnection::class)
+            ->shouldReceive('channel')
+            ->withNoArgs()
+            ->andReturn($amqpChannelMock)
+            ->getMock();
+
+        $commonOperations = new CommonOperations();
+
+        $commonOperations->setAMQPConnection($amqpConnectionMock);
+
+        $this->assertSame(
+            $commonOperations,
+            $commonOperations->addQueue(
+                $args['queueName'],
+                true,
+                true,
+                10000,
+                $args['retryQueueName']
+            )->bind($args['routingKey'], null, $args['exchange'])
+        );
+
+        $this->assertEquals($args['queueName'], $commonOperations->getLastQueueCreated());
+    }
+
     public function testCommonOperationsShouldBindQueue()
     {
         $args = [
