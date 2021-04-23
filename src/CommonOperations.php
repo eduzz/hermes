@@ -55,11 +55,25 @@ class CommonOperations
         $this->connect();
 
         $arguments = array();
-
+        $argumentsNack = array();
         if ($createErrorQueue) {
+            $deadLetterConfigNack = [];
+
+            if (!empty($retryQueueBind)) {
+                $deadLetterConfigNack = [
+                    "x-dead-letter-exchange" => 'eduzz',
+                    "x-dead-letter-routing-key" => $this->getRetryQueueBind($name, $retryQueueBind),
+                ];
+                
+                if (!empty($retryTtl)) {
+                    $deadLetterConfigNack['x-message-ttl'] = intval($retryTtl);
+                }
+                $argumentsNack = new AMQPTable($deadLetterConfigNack);
+            }
+
             $this->declareQueue(
                 $this->getNackQueueNameFor($name),
-                $arguments,
+                $argumentsNack,
                 $durable
             );
 
@@ -67,12 +81,8 @@ class CommonOperations
 
             $deadLetterConfig = [
                 "x-dead-letter-exchange" => 'eduzz',
-                "x-dead-letter-routing-key" => $this->getRetryQueueBind($name, $retryQueueBind),
+                "x-dead-letter-routing-key" => $this->getNackQueueNameFor($name, $retryQueueBind),
             ];
-
-            if (!empty($retryTtl)) {
-                $deadLetterConfig['x-message-ttl'] = intval($retryTtl);
-            }
 
             $arguments = new AMQPTable($deadLetterConfig);
         }
