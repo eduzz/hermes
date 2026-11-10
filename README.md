@@ -311,11 +311,46 @@ $hermes->addListenerTo(
 			echo json_encode($msg->body);
 
 			return $hermes->consumer()->ack($msg);
-		 catch(\Exception $e) {
+		} catch(\Exception $e) {
 			return $hermes->consumer()->nack($msg);
 		}
 	},
 	false // Error handling desativado
+);
+
+$hermes->start();
+```
+
+### Retry com limite de tentativas e Dead Letter Queue (DLQ)
+
+Para evitar retentativas infinitas sem precisar recriar as filas já existentes, é possível criar uma fila adicional `.dlq` (opt-in) e utilizar `nackOrDeadLetter`:
+
+```php
+<?php
+
+$queueName = $hermes->addQueue(
+    'queue_name',
+    true,               // Cria queue_name.nack
+    true,               // Durável
+    30000,              // TTL de retry em ms
+    'retry.queue_name', // Routing key de retry
+    true                // Opt-in: cria queue_name.dlq e faz bind em 'eduzz'
+)
+    ->bind('my.routing.key')
+    ->getLastQueueCreated();
+
+$hermes->addListenerTo(
+    $queueName,
+    function ($msg) use ($hermes) {
+        try {
+            // Processa a mensagem
+            return $hermes->consumer()->ack($msg);
+        } catch (\Exception $e) {
+            // Envia nack enquanto abaixo de 3 tentativas; na 3ª falha publica em queue_name.dlq e dá ack
+            return $hermes->consumer()->nackOrDeadLetter($msg, 3);
+        }
+    },
+    false
 );
 
 $hermes->start();

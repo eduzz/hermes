@@ -324,5 +324,147 @@ class CommonOperationsTest extends BaseTest
         $this->assertSame($commonOperation, $commonOperation->bind($args['routingKey'], $args['queueName'], $args['exchange']));
     }
 
+    public function testCommonOperationsShouldAddQueueWithDlqWhenEnabled()
+    {
+        $args = [
+            "queueName" => "queue_name",
+            "nackQueueName" => "queue_name.nack",
+            "dlqQueueName" => "queue_name.dlq",
+            "exchange" => "exchange",
+            "routingKey" => 'app.module.action',
+            "retryQueueName" => "queue_name.retry",
+        ];
+
+        $amqpChannelMock = M::mock(AMQPChannel::class)
+            ->shouldReceive('queue_declare')
+            ->withArgs(
+                [
+                $args['queueName'],
+                false,
+                true,
+                false,
+                false,
+                false,
+                M::type(AMQPTable::class)
+                ]
+            )
+            ->andReturn(
+                [
+                $args['queueName'],
+                0,
+                0
+                ]
+            )
+            ->shouldReceive('queue_declare')
+            ->withArgs(
+                [
+                $args['nackQueueName'],
+                false,
+                true,
+                false,
+                false,
+                false,
+                M::type(AMQPTable::class)
+                ]
+            )
+            ->andReturn(
+                [
+                $args['nackQueueName'],
+                0,
+                0
+                ]
+            )
+            ->shouldReceive('queue_declare')
+            ->withArgs(
+                [
+                $args['dlqQueueName'],
+                false,
+                true,
+                false,
+                false,
+                false,
+                M::type('array')
+                ]
+            )
+            ->andReturn(
+                [
+                $args['dlqQueueName'],
+                0,
+                0
+                ]
+            )
+            ->shouldReceive('queue_bind')
+            ->withArgs(
+                [
+                $args['nackQueueName'],
+                'eduzz',
+                $args['nackQueueName']
+                ]
+            )
+            ->andReturnNull()
+            ->shouldReceive('queue_bind')
+            ->withArgs(
+                [
+                $args['dlqQueueName'],
+                'eduzz',
+                $args['dlqQueueName']
+                ]
+            )
+            ->andReturnNull()
+            ->shouldReceive('queue_bind')
+            ->withArgs(
+                [
+                $args['queueName'],
+                'eduzz',
+                $args['retryQueueName']
+                ]
+            )
+            ->andReturnNull()
+            ->shouldReceive('queue_bind')
+            ->withArgs(
+                [
+                $args['queueName'],
+                $args['exchange'],
+                $args['routingKey']
+                ]
+            )
+            ->andReturnNull()
+            ->shouldReceive('exchange_declare')
+            ->withArgs(
+                [
+                'eduzz',
+                'topic',
+                false,
+                true,
+                false
+                ]
+            )
+            ->andReturnNull()
+            ->getMock();
+
+        $amqpConnectionMock = M::mock(AMQPConnection::class)
+            ->shouldReceive('channel')
+            ->withNoArgs()
+            ->andReturn($amqpChannelMock)
+            ->getMock();
+
+        $commonOperations = new CommonOperations();
+        $commonOperations->setAMQPConnection($amqpConnectionMock);
+
+        $this->assertSame(
+            $commonOperations,
+            $commonOperations->addQueue(
+                $args['queueName'],
+                true,
+                true,
+                10000,
+                $args['retryQueueName'],
+                true
+            )->bind($args['routingKey'], null, $args['exchange'])
+        );
+
+        $this->assertEquals($args['queueName'], $commonOperations->getLastQueueCreated());
+    }
+
 
 }

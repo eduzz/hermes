@@ -9,6 +9,10 @@ use PhpAmqpLib\Wire\AMQPTable;
 
 class CommonOperations
 {
+    const DEFAULT_EXCHANGE = 'eduzz';
+    const NACK_SUFFIX = '.nack';
+    const DLQ_SUFFIX = '.dlq';
+
     protected $lastQueueCreated;
 
     protected $amqpConnection;
@@ -50,7 +54,7 @@ class CommonOperations
         return $this;
     }
 
-    public function addQueue($name = "", $createErrorQueue = true, $durable = true, $retryTtl = null, $retryQueueBind = null)
+    public function addQueue($name = "", $createErrorQueue = true, $durable = true, $retryTtl = null, $retryQueueBind = null, $createDlq = false)
     {
         $this->connect();
 
@@ -61,7 +65,7 @@ class CommonOperations
 
             if (!empty($retryQueueBind)) {
                 $deadLetterConfigNack = [
-                    "x-dead-letter-exchange" => 'eduzz',
+                    "x-dead-letter-exchange" => self::DEFAULT_EXCHANGE,
                     "x-dead-letter-routing-key" => $this->getRetryQueueBind($name, $retryQueueBind),
                 ];
                 
@@ -80,12 +84,19 @@ class CommonOperations
             $this->bind($this->getNackQueueNameFor($name), $this->getNackQueueNameFor($name));
 
             $deadLetterConfig = [
-                "x-dead-letter-exchange" => 'eduzz',
-                "x-dead-letter-routing-key" => $this->getNackQueueNameFor($name, $retryQueueBind),
+                "x-dead-letter-exchange" => self::DEFAULT_EXCHANGE,
+                "x-dead-letter-routing-key" => $this->getNackQueueNameFor($name),
             ];
 
             $arguments = new AMQPTable($deadLetterConfig);
         }
+
+        if ($createDlq) {
+            $dlqQueueName = $this->getDlqQueueNameFor($name);
+            $this->declareQueue($dlqQueueName, array(), $durable);
+            $this->bind($dlqQueueName, $dlqQueueName);
+        }
+
         $this->lastQueueCreated = $this->declareQueue($name, $arguments, $durable);
         
         if ($createErrorQueue && !empty($retryQueueBind)) {
@@ -141,10 +152,15 @@ class CommonOperations
 
     protected function getNackQueueNameFor($name)
     {
-        return $name . ".nack";
+        return $name . self::NACK_SUFFIX;
     }
 
-    public function bind($routingKey, $name = null, $exchange = 'eduzz')
+    protected function getDlqQueueNameFor($name)
+    {
+        return $name . self::DLQ_SUFFIX;
+    }
+
+    public function bind($routingKey, $name = null, $exchange = self::DEFAULT_EXCHANGE)
     {
         $this->connect();
         $this->declareExchange($exchange);
