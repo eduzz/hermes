@@ -37,10 +37,14 @@ class Hermes extends CommonOperations
         $this->qos = $qos;
     }
 
-    public function addListenerTo($queue, $callback, $errorHandling = true)
+    public function addListenerTo($queue, $callback, $errorHandling = true, $maxAttempts = null)
     {
         $this->getDefaultConsumer()->setQos($this->qos);
-        $this->getDefaultConsumer()->addListenerTo($queue, $callback, $errorHandling);
+        if ($maxAttempts !== null) {
+            $this->getDefaultConsumer()->addListenerTo($queue, $callback, $errorHandling, $maxAttempts);
+        } else {
+            $this->getDefaultConsumer()->addListenerTo($queue, $callback, $errorHandling);
+        }
 
         return $this;
     }

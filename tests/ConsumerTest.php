@@ -6,6 +6,7 @@ use Mockery as M;
 
 use PhpAmqpLib\Connection\AMQPConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use PhpAmqpLib\Wire\AMQPTable;
 
 use Eduzz\Hermes\Exception\HermesInvalidArgumentException;
 use Eduzz\Hermes\Consumer\Consumer;
@@ -296,5 +297,131 @@ class ConsumerTest extends BaseTest
                 $callback
             )
         );
+    }
+
+    public function testConsumerShouldNackWhenDeliveryAttemptIsBelowMaxAttempts()
+    {
+        $amqpChannelMock = M::mock(AMQPMessage::class)
+            ->shouldReceive('basic_nack')
+            ->once()
+            ->with('tag-1', false, false)
+            ->andReturnTrue()
+            ->shouldNotReceive('basic_publish')
+            ->shouldNotReceive('basic_ack')
+            ->getMock();
+
+        $messageMock = M::mock(AMQPMessage::class);
+        $messageMock->shouldReceive('get_properties')
+            ->andReturn([
+                'application_headers' => [
+                    'x-death' => [
+                        [
+                            'queue' => 'my.queue',
+                            'reason' => 'rejected',
+                            'count' => 1,
+                        ],
+                    ],
+                ],
+            ]);
+        $messageMock->body = (object) ['id' => 123];
+        $messageMock->delivery_info = [
+            'channel' => $amqpChannelMock,
+            'delivery_tag' => 'tag-1',
+        ];
+
+        $consumer = new Consumer();
+
+        $this->assertTrue($consumer->nackOrDeadLetter($messageMock, 3));
+    }
+
+    public function testConsumerShouldPublishToDlqAndAckWhenMaxAttemptsReachedWithArrayHeaders()
+    {
+        $amqpChannelMock = M::mock(AMQPMessage::class)
+            ->shouldReceive('basic_publish')
+            ->once()
+            ->with(
+                M::on(function ($msg) {
+                    return $msg instanceof AMQPMessage && $msg->body === '{"id":123}';
+                }),
+                'eduzz',
+                'my.queue.dlq'
+            )
+            ->shouldReceive('basic_ack')
+            ->once()
+            ->with('tag-3')
+            ->andReturnTrue()
+            ->shouldNotReceive('basic_nack')
+            ->getMock();
+
+        $messageMock = M::mock(AMQPMessage::class);
+        $messageMock->shouldReceive('get_properties')
+            ->andReturn([
+                'application_headers' => [
+                    'x-death' => [
+                        [
+                            'queue' => 'my.queue.nack',
+                            'reason' => 'expired',
+                            'count' => 2,
+                        ],
+                        [
+                            'queue' => 'my.queue',
+                            'reason' => 'rejected',
+                            'count' => 2,
+                        ],
+                    ],
+                ],
+            ]);
+        $messageMock->body = (object) ['id' => 123];
+        $messageMock->delivery_info = [
+            'channel' => $amqpChannelMock,
+            'delivery_tag' => 'tag-3',
+        ];
+
+        $consumer = new Consumer();
+
+        $this->assertTrue($consumer->nackOrDeadLetter($messageMock, 3));
+    }
+
+    public function testConsumerShouldPublishToDlqAndAckWhenMaxAttemptsReachedWithAmqpTableHeaders()
+    {
+        $amqpChannelMock = M::mock(AMQPMessage::class)
+            ->shouldReceive('basic_publish')
+            ->once()
+            ->with(
+                M::type(AMQPMessage::class),
+                'eduzz',
+                'custom.dlq'
+            )
+            ->shouldReceive('basic_ack')
+            ->once()
+            ->with('tag-3')
+            ->andReturnTrue()
+            ->shouldNotReceive('basic_nack')
+            ->getMock();
+
+        $headersTable = new AMQPTable([
+            'x-death' => [
+                [
+                    'queue' => 'my.queue',
+                    'reason' => 'rejected',
+                    'count' => 2,
+                ],
+            ],
+        ]);
+
+        $messageMock = M::mock(AMQPMessage::class);
+        $messageMock->shouldReceive('get_properties')
+            ->andReturn([
+                'application_headers' => $headersTable,
+            ]);
+        $messageMock->body = '{"id":456}';
+        $messageMock->delivery_info = [
+            'channel' => $amqpChannelMock,
+            'delivery_tag' => 'tag-3',
+        ];
+
+        $consumer = new Consumer();
+
+        $this->assertTrue($consumer->nackOrDeadLetter($messageMock, 3, 'custom.dlq'));
     }
 }
